@@ -3,7 +3,7 @@ import os,json,time,uuid
 from io import BytesIO
 from collections import defaultdict
 from decimal import Decimal
-from datetime import datetime,date
+from datetime import datetime,date,timedelta
 
 import xlrd
 import redis
@@ -20,7 +20,7 @@ from django.shortcuts import render,reverse
 from django.http import JsonResponse,HttpResponse,StreamingHttpResponse,FileResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core import serializers
-from .models import File,SqlModel,Job
+from .models import File,SqlModel,Job,LoginRecord
 from django.conf import settings
 from django.db import connection
 
@@ -876,3 +876,51 @@ def add1(request):
     # print(r.result)
     # print(r.get(timeout=6))
     return HttpResponse('h')
+
+def login_records(request):
+    """获取登录记录"""
+    records = LoginRecord.objects.all().order_by('-login_time')[:20]  # 获取最近20条记录
+    data = []
+    for record in records:
+        data.append({
+            'username': record.username,
+            'login_time': record.login_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'online_time': str(record.online_time) if record.online_time else '',
+            'operation_log': record.operation_log or ''
+        })
+    return JsonResponse({'records': data})
+
+@csrf_exempt
+def add_login_record(request):
+    """添加登录记录"""
+    if request.method == 'POST':
+        data = json.loads(request.body.decode('utf8'))
+        username = data.get('username')
+        login_time = data.get('login_time')
+        online_time = data.get('online_time')
+        operation_log = data.get('operation_log')
+        
+        # 处理登录时间
+        if login_time:
+            login_time = datetime.strptime(login_time, '%Y-%m-%d %H:%M:%S')
+        else:
+            login_time = timezone.now()
+        
+        # 处理在线时间
+        if online_time:
+            # 假设online_time格式为'HH:MM:SS'
+            try:
+                h, m, s = map(int, online_time.split(':'))
+                online_time = timedelta(hours=h, minutes=m, seconds=s)
+            except:
+                online_time = None
+        
+        record = LoginRecord(
+            username=username,
+            login_time=login_time,
+            online_time=online_time,
+            operation_log=operation_log
+        )
+        record.save()
+        return JsonResponse({'result': 'success'})
+    return JsonResponse({'result': 'fail'})

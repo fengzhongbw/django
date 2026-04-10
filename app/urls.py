@@ -36,5 +36,7 @@ urlpatterns = [
     url(r'^get_job_result/$', views.get_job_result, name='get_job_result'),
     # url(r'^analyze_websocket/$', views.analyze_websocket, name='analyze_websocket'),
     url(r'^add1/$', views.add1, name='add'),
+    url(r'^login_records/$', views.login_records, name='login_records'),
+    url(r'^add_login_record/$', views.add_login_record, name='add_login_record'),
 
 ]

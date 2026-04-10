@@ -38,3 +38,15 @@ class Job(models.Model):
 
     def __str__(self):
         return self.task_id
+
+class LoginRecord(models.Model):
+    username = models.CharField(max_length=100, verbose_name='用户名')
+    login_time = models.DateTimeField('登录时间', default=timezone.now)
+    online_time = models.DurationField('在线时间', null=True)
+    operation_log = models.TextField('操作变更记录', blank=True, null=True)
+
+    class Meta:
+        ordering = ['-login_time']
+
+    def __str__(self):
+        return f"{self.username} - {self.login_time}"
